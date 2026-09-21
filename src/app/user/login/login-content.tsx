@@ -26,6 +26,7 @@ import { COLORS, withAlpha } from "@fitconnect/shared/theme"
 import { sendPasswordResetEmail } from "firebase/auth"
 import { auth } from "@fitconnect/shared/firebase/config"
 import { isValidPhone, PHONE_VALIDATION_MESSAGE } from "@fitconnect/shared/utils/phone"
+import { trackPixel } from "@/lib/meta-pixel"
 
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email address"),
@@ -108,6 +109,7 @@ export function UserLoginContent() {
         setIsLoading(true)
         const result = await signupClient(values.email, values.password, values.name, values.phone)
         if (result.success) {
+            trackPixel("CompleteRegistration", { content_name: "email" })
             toast.success("Account created!", {
                 description: "Welcome to SOL Pilates Studio.",
             })
@@ -124,6 +126,7 @@ export function UserLoginContent() {
         setIsGoogleLoading(true)
         const result = await googleSignIn()
         if (result.success) {
+            if (result.isNewUser) trackPixel("CompleteRegistration", { content_name: "google" })
             toast.success("Welcome!", {
                 description: "Successfully signed in with Google.",
             })

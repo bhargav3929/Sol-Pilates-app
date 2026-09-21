@@ -33,9 +33,9 @@ interface ClientAuthState {
     loginClient: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
     signupClient: (email: string, password: string, name: string, phone: string) => Promise<{ success: boolean; error?: string }>
     savePhone: (phone: string) => Promise<{ success: boolean; error?: string }>
-    googleSignIn: () => Promise<{ success: boolean; error?: string }>
-    googleSignInWithIdToken: (idToken: string, accessToken?: string) => Promise<{ success: boolean; error?: string }>
-    appleSignInWithIdentityToken: (identityToken: string, rawNonce: string, name?: string | null) => Promise<{ success: boolean; error?: string }>
+    googleSignIn: () => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>
+    googleSignInWithIdToken: (idToken: string, accessToken?: string) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>
+    appleSignInWithIdentityToken: (identityToken: string, rawNonce: string, name?: string | null) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>
     logoutClient: () => Promise<void>
     refreshSubscription: () => Promise<void>
 }
@@ -65,8 +65,9 @@ async function finalizeProviderLogin(
     user: FirebaseUser,
     set: ClientAuthSetter,
     fallbackName?: string | null,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; isNewUser?: boolean }> {
     let profile = await fetchClientProfile(user.uid)
+    const isNewUser = !profile
     if (!profile) {
         profile = await createClientProfile(
             user.uid,
@@ -86,7 +87,7 @@ async function finalizeProviderLogin(
         }
     }
     set({ isAuthenticated: true, clientUser: profile, firebaseUser: user })
-    return { success: true }
+    return { success: true, isNewUser }
 }
 
 async function createClientProfile(uid: string, email: string, name: string, phone?: string | null): Promise<ClientUser> {

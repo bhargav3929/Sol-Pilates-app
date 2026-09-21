@@ -26,6 +26,7 @@ import { signInWithEmailAndPassword } from "firebase/auth"
 import { auth } from "@fitconnect/shared/firebase/config"
 import { useClientAuthStore } from "@fitconnect/shared/stores/clientAuthStore"
 import { toast } from "sonner"
+import { trackPixel } from "@/lib/meta-pixel"
 
 const loginSchema = z.object({
     email: z.string().email("Invalid email address"),
@@ -143,6 +144,7 @@ export function LoginModal({ trigger, defaultOpen = false, isOpenOverride, onClo
                         const result = await googleSignIn()
                         setIsGoogleLoading(false)
                         if (result.success) {
+                            if (result.isNewUser) trackPixel("CompleteRegistration", { content_name: "google" })
                             toast.success("Welcome back!")
                             setModalOpen(false)
                         } else {

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import "./globals.css";
 import { LayoutContent } from "@/components/layout/LayoutContent";
 import { SitePasswordGate } from "@/components/layout/SitePasswordGate";
+import { MetaPixel } from "@/components/layout/MetaPixel";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default function RootLayout({
           <LayoutContent>{children}</LayoutContent>
         {/* </SitePasswordGate> */}
         <Toaster richColors position="top-right" closeButton />
+        <MetaPixel />
       </body>
     </html>
   );

@@ -25,6 +25,7 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { useIntroClassLead } from "@/lib/hooks/useIntroClassLead"
 import { useRazorpay } from "@/lib/hooks/useRazorpay"
+import { toMajorUnits, trackPixel } from "@/lib/meta-pixel"
 
 type Step = 'plan' | 'success'
 
@@ -174,6 +175,11 @@ export default function SubscribePage() {
                                 razorpay_signature: response.razorpay_signature,
                                 paymentId: order.paymentId,
                             })
+                            trackPixel('Purchase', {
+                                content_name: result.planName,
+                                value: toMajorUnits(order.amount),
+                                currency: order.currency,
+                            })
                             setResultData({
                                 planName: result.planName,
                                 credits: result.credits,
@@ -231,6 +237,11 @@ export default function SubscribePage() {
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
                             paymentId: subscription.paymentId,
+                        })
+                        trackPixel('Subscribe', {
+                            content_name: result.planName,
+                            value: toMajorUnits(subscription.amount),
+                            currency: subscription.currency,
                         })
                         setResultData({
                             planName: result.planName,

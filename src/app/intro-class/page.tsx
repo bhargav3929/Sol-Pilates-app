@@ -9,6 +9,7 @@ import { useRazorpay } from '@/lib/hooks/useRazorpay';
 import { callCreatePaymentOrder, callGetPricing, callVerifyPayment } from '@fitconnect/shared/firebase/firestore';
 import { getPlanById } from '@fitconnect/shared/types/subscription';
 import { applyGstToRupees, formatPaise, GST_RATE_PERCENT } from '@fitconnect/shared/utils/gst';
+import { toMajorUnits, trackPixel } from '@/lib/meta-pixel';
 
 type FormState = {
     name: string;
@@ -152,6 +153,9 @@ export default function IntroClassPage() {
                             razorpay_signature: response.razorpay_signature,
                             paymentId: order.paymentId,
                         });
+                        const value = toMajorUnits(order.amount);
+                        trackPixel('Lead', { content_name: 'Demo Class', value, currency: order.currency });
+                        trackPixel('Purchase', { content_name: 'Demo Class', value, currency: order.currency });
                         await refreshSubscription();
                         refreshIntroClassLead();
                         setDone(true);

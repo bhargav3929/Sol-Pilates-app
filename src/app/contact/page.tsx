@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
+import { trackPixel } from "@/lib/meta-pixel";
 
 const CONTACT_INFO = [
   {
@@ -43,6 +44,7 @@ export default function ContactPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    trackPixel("Lead", { content_name: "Contact Form" });
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 4000);
     setFormState({ name: "", email: "", phone: "", subject: "", message: "" });
@@ -136,8 +138,10 @@ export default function ContactPage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2">Name</label>
+                    <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2" htmlFor="contact-name">Name</label>
                     <input
+                      id="contact-name"
+                      name="name"
                       type="text"
                       required
                       value={formState.name}
@@ -147,8 +151,10 @@ export default function ContactPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2">Email</label>
+                    <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2" htmlFor="contact-email">Email</label>
                     <input
+                      id="contact-email"
+                      name="email"
                       type="email"
                       required
                       value={formState.email}
@@ -161,8 +167,10 @@ export default function ContactPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2">Phone</label>
+                    <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2" htmlFor="contact-phone">Phone</label>
                     <input
+                      id="contact-phone"
+                      name="phone"
                       type="tel"
                       value={formState.phone}
                       onChange={(e) => setFormState({ ...formState, phone: e.target.value })}
@@ -171,8 +179,10 @@ export default function ContactPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2">Subject</label>
+                    <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2" htmlFor="contact-subject">Subject</label>
                     <select
+                      id="contact-subject"
+                      name="subject"
                       value={formState.subject}
                       onChange={(e) => setFormState({ ...formState, subject: e.target.value })}
                       className="w-full bg-peach-300 border border-peach-400 px-4 py-3.5 text-olive-600 text-sm focus:outline-none focus:border-terra-400/50 transition-colors"
@@ -187,8 +197,10 @@ export default function ContactPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2">Message</label>
+                  <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2" htmlFor="contact-message">Message</label>
                   <textarea
+                    id="contact-message"
+                    name="message"
                     required
                     rows={5}
                     value={formState.message}
