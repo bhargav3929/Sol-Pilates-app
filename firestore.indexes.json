@@ -97,6 +97,14 @@
             "queryScope": "COLLECTION",
             "fields": [
                 { "fieldPath": "status", "order": "ASCENDING" },
+                { "fieldPath": "date", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "classes",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "status", "order": "ASCENDING" },
                 { "fieldPath": "trainerId", "order": "ASCENDING" },
                 { "fieldPath": "date", "order": "ASCENDING" },
                 { "fieldPath": "startTime", "order": "ASCENDING" }
