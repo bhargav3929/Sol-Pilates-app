@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sol Pilates Studio",
     "slug": "sol-pilates",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "newArchEnabled": false,
     "orientation": "portrait",
     "icon": "./assets/icon.png",
