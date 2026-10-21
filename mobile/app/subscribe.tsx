@@ -742,6 +742,7 @@ export default function SubscribeScreen() {
                         <TouchableOpacity
                             style={[
                                 styles.primaryButton,
+                                styles.planContinueButton,
                                 (!selectedPlan ||
                                     selectedCurrentPlan ||
                                     (hasActiveMembership && renewalCanceled) ||
@@ -1112,6 +1113,9 @@ const styles = StyleSheet.create({
     },
 
     // Buttons
+    planContinueButton: {
+        marginBottom: Spacing.lg,
+    },
     primaryButton: {
         backgroundColor: Colors.terra[400],
         borderRadius: BorderRadius.xl,
