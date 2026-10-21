@@ -453,25 +453,6 @@ export default function SubscribePage() {
                             priceOverrides={priceOverrides}
                         />
 
-                        {/* Selected plan features */}
-                        {selectedPlan && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-peach-200/30 rounded-2xl p-5 border border-peach-400/10"
-                            >
-                                <p className="app-label mb-3">What you get</p>
-                                <ul className="space-y-2">
-                                    {selectedPlan.features.map((f, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-olive-300 text-sm">
-                                            <CheckCircle2 className="w-4 h-4 text-terra-400 mt-0.5 shrink-0" />
-                                            <span>{f}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </motion.div>
-                        )}
-
                         <Button
                             onClick={handleContinueToCheckout}
                             disabled={

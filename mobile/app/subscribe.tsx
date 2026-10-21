@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Fragment, useState, useMemo, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -715,32 +715,31 @@ export default function SubscribeScreen() {
 
                         {/* Plan cards */}
                         {filteredPlans.map((plan) => (
-                            <PlanCard
-                                key={plan.id}
-                                plan={plan}
-                                selected={selectedPlanId === plan.id}
-                                onSelect={() => setSelectedPlanId(plan.id)}
-                                charge={chargeFor(plan)}
-                            />
-                        ))}
-
-                        {/* Features for selected plan */}
-                        {selectedPlan && (
-                            <View style={styles.featuresCard}>
-                                <Text style={styles.featuresTitle}>WHAT YOU GET</Text>
-                                {selectedPlan.features.map((feature, i) => (
-                                    <View key={i} style={styles.featureRow}>
-                                        <Feather
-                                            name="check-circle"
-                                            size={16}
-                                            color={Colors.terra[400]}
-                                            style={{ marginRight: Spacing.sm }}
-                                        />
-                                        <Text style={styles.featureText}>{feature}</Text>
+                            <Fragment key={plan.id}>
+                                <PlanCard
+                                    plan={plan}
+                                    selected={selectedPlanId === plan.id}
+                                    onSelect={() => setSelectedPlanId(plan.id)}
+                                    charge={chargeFor(plan)}
+                                />
+                                {selectedPlanId === plan.id && (
+                                    <View style={styles.featuresCard}>
+                                        <Text style={styles.featuresTitle}>WHAT YOU GET</Text>
+                                        {plan.features.map((feature, i) => (
+                                            <View key={i} style={styles.featureRow}>
+                                                <Feather
+                                                    name="check-circle"
+                                                    size={16}
+                                                    color={Colors.terra[400]}
+                                                    style={{ marginRight: Spacing.sm }}
+                                                />
+                                                <Text style={styles.featureText}>{feature}</Text>
+                                            </View>
+                                        ))}
                                     </View>
-                                ))}
-                            </View>
-                        )}
+                                )}
+                            </Fragment>
+                        ))}
 
                         {/* Continue button */}
                         <TouchableOpacity

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import { motion } from "framer-motion"
-import { CheckIcon, SparklesIcon } from "lucide-react"
+import { CheckCircle2, CheckIcon, SparklesIcon } from "lucide-react"
 import { PLAN_CATALOG, type PlanId, type PlanDefinition } from "@fitconnect/shared/types/subscription"
 import { cn } from "@/lib/utils"
 import { applyGstToRupees, formatPaise, GST_RATE_PERCENT } from '@fitconnect/shared/utils/gst';
@@ -129,13 +129,31 @@ export function PlanSelector({ selectedPlanId, onSelect, priceOverrides }: PlanS
             {/* Plan cards */}
             <div className="grid gap-3">
                 {plans.map((plan) => (
-                    <PlanCard
-                        key={plan.id}
-                        plan={plan}
-                        isSelected={selectedPlanId === plan.id}
-                        onSelect={() => onSelect(plan.id)}
-                        displayPrice={priceOverrides?.[plan.id] ?? plan.price}
-                    />
+                    <Fragment key={plan.id}>
+                        <PlanCard
+                            plan={plan}
+                            isSelected={selectedPlanId === plan.id}
+                            onSelect={() => onSelect(plan.id)}
+                            displayPrice={priceOverrides?.[plan.id] ?? plan.price}
+                        />
+                        {selectedPlanId === plan.id && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="px-5 py-4"
+                            >
+                                <p className="app-label mb-3">What you get</p>
+                                <ul className="space-y-2">
+                                    {plan.features.map((feature, i) => (
+                                        <li key={i} className="flex items-start gap-2 text-olive-300 text-sm">
+                                            <CheckCircle2 className="w-4 h-4 text-terra-400 mt-0.5 shrink-0" />
+                                            <span>{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </motion.div>
+                        )}
+                    </Fragment>
                 ))}
             </div>
         </div>
