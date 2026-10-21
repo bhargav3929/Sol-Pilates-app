@@ -723,6 +723,7 @@ export default function SubscribeScreen() {
                                     charge={chargeFor(plan)}
                                 />
                                 {selectedPlanId === plan.id && (
+                                    <Fragment>
                                     <View style={styles.featuresCard}>
                                         <Text style={styles.featuresTitle}>WHAT YOU GET</Text>
                                         {plan.features.map((feature, i) => (
@@ -737,10 +738,6 @@ export default function SubscribeScreen() {
                                             </View>
                                         ))}
                                     </View>
-                                )}
-                            </Fragment>
-                        ))}
-
                         {/* Continue button */}
                         <TouchableOpacity
                             style={[
@@ -782,6 +779,10 @@ export default function SubscribeScreen() {
                                         : 'CONTINUE'}
                             </Text>
                         </TouchableOpacity>
+                                    </Fragment>
+                                )}
+                            </Fragment>
+                        ))}
                     </View>
                 )}
 

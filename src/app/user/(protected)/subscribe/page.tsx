@@ -451,8 +451,7 @@ export default function SubscribePage() {
                             selectedPlanId={selectedPlanId}
                             onSelect={setSelectedPlanId}
                             priceOverrides={priceOverrides}
-                        />
-
+                            selectedPlanAction={
                         <Button
                             onClick={handleContinueToCheckout}
                             disabled={
@@ -480,6 +479,8 @@ export default function SubscribePage() {
                                         ? 'UPDATE MEMBERSHIP'
                                         : 'CONTINUE TO PAYMENT'}
                         </Button>
+                            }
+                        />
                     </motion.div>
                 )}
 

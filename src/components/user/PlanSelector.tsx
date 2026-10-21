@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useState } from "react"
+import { Fragment, useState, type ReactNode } from "react"
 import { motion } from "framer-motion"
 import { CheckCircle2, CheckIcon, SparklesIcon } from "lucide-react"
 import { PLAN_CATALOG, type PlanId, type PlanDefinition } from "@fitconnect/shared/types/subscription"
@@ -11,6 +11,7 @@ interface PlanSelectorProps {
     selectedPlanId: PlanId | null
     onSelect: (planId: PlanId) => void
     priceOverrides?: Partial<Record<string, number>>
+    selectedPlanAction?: ReactNode
 }
 
 function PlanCard({
@@ -91,7 +92,7 @@ function PlanCard({
     )
 }
 
-export function PlanSelector({ selectedPlanId, onSelect, priceOverrides }: PlanSelectorProps) {
+export function PlanSelector({ selectedPlanId, onSelect, priceOverrides, selectedPlanAction }: PlanSelectorProps) {
     const [activeTab, setActiveTab] = useState<'membership' | 'class_pack'>('membership')
 
     const memberships = PLAN_CATALOG.filter(p => p.category === 'membership')
@@ -137,6 +138,7 @@ export function PlanSelector({ selectedPlanId, onSelect, priceOverrides }: PlanS
                             displayPrice={priceOverrides?.[plan.id] ?? plan.price}
                         />
                         {selectedPlanId === plan.id && (
+                            <Fragment>
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -152,6 +154,8 @@ export function PlanSelector({ selectedPlanId, onSelect, priceOverrides }: PlanS
                                     ))}
                                 </ul>
                             </motion.div>
+                            {selectedPlanAction}
+                            </Fragment>
                         )}
                     </Fragment>
                 ))}
