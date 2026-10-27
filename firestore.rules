@@ -178,5 +178,13 @@ service cloud.firestore {
                     && request.resource.data.rating is int;
       allow read, update, delete: if isAdmin();
     }
+
+    // Contact form messages (website /contact page)
+    // - Create: server only via /api/contact (Admin SDK). Never client-writable.
+    // - Read/Update/Delete: admin only
+    match /contactMessages/{messageId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if false;
+    }
   }
 }

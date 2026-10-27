@@ -21,6 +21,7 @@ import {
     Star,
     CheckSquare,
     Megaphone,
+    Tray,
 } from "@phosphor-icons/react"
 import { useState } from "react"
 import { useAdminAuthStore } from "@fitconnect/shared/stores/adminAuthStore"
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
     { label: "Classes", icon: CalendarDots, href: "/admin/classes" },
     { label: "Members", icon: UserCircle, href: "/admin/members" },
     { label: "Leads", icon: EnvelopeSimple, href: "/admin/leads" },
+    { label: "Messages", icon: Tray, href: "/admin/messages" },
     { label: "Waitlist", icon: Star, href: "/admin/waitlist" },
     { label: "Trainers", icon: UsersThree, href: "/admin/trainers" },
     { label: "Facility", icon: MapPin, href: "/admin/locations" },

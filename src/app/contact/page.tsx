@@ -40,14 +40,37 @@ export default function ContactPage() {
     subject: "",
     message: "",
   });
+  const [honeypot, setHoneypot] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    trackPixel("Lead", { content_name: "Contact Form" });
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000);
-    setFormState({ name: "", email: "", phone: "", subject: "", message: "" });
+    if (sending) return;
+    setSending(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formState, website: honeypot }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Something went wrong. Please try again or email us directly.");
+        return;
+      }
+      trackPixel("Lead", { content_name: "Contact Form" });
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 6000);
+      setFormState({ name: "", email: "", phone: "", subject: "", message: "" });
+    } catch {
+      setError("We couldn't reach the server. Please check your connection and try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -135,7 +158,7 @@ export default function ContactPage() {
                 Fill out the form below and we&apos;ll get back to you within 24 hours.
               </p>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="relative space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-xs font-bold text-olive-300 tracking-wider uppercase mb-2" htmlFor="contact-name">Name</label>
@@ -210,11 +233,26 @@ export default function ContactPage() {
                   />
                 </div>
 
+                {/* Honeypot: hidden from people, filled by bots. Submissions with a value are dropped server-side. */}
+                <div className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden" aria-hidden="true">
+                  <label htmlFor="contact-website">Website</label>
+                  <input
+                    id="contact-website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                  />
+                </div>
+
                 <button
                   type="submit"
-                  className="group inline-flex items-center gap-3 px-8 py-4 bg-terra-400 text-peach-50 font-black text-sm tracking-wider hover:bg-terra-300 transition-all"
+                  disabled={sending}
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-terra-400 text-peach-50 font-black text-sm tracking-wider hover:bg-terra-300 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <span>SEND MESSAGE</span>
+                  <span>{sending ? "SENDING..." : "SEND MESSAGE"}</span>
                   <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -224,7 +262,18 @@ export default function ContactPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-terra-400 font-bold text-sm"
                   >
-                    Thank you! We&apos;ll be in touch soon.
+                    Thank you! Your message has reached us. We&apos;ll reply within 24 hours.
+                  </motion.p>
+                )}
+
+                {error && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    role="alert"
+                    className="text-red-600 font-bold text-sm"
+                  >
+                    {error}
                   </motion.p>
                 )}
               </form>
