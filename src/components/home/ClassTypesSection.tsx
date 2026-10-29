@@ -1,5 +1,6 @@
 "use client";
 
+import { useSiteMedia } from "@/lib/hooks/useSiteMedia";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
@@ -44,6 +45,7 @@ const CLASSES = [
     intensity: "Strength",
     bestFor: "Core control",
     body: "Strength meets movement in one seamless sequence. No breaks, no rush. Just continuous work that builds your body and clears your mind.",
+    slot: "home.class-types.sol-flow",
     image: "/images/IMG_9836.jpeg",
     alt: "Long stretch",
   },
@@ -55,6 +57,7 @@ const CLASSES = [
     intensity: "Cardio",
     bestFor: "Endurance",
     body: "High-energy boutique sequences that build endurance and leave you breathless (in the best way).",
+    slot: "home.class-types.sol-cardio",
     image: "/images/IMG_0003.jpeg",
     alt: "Jumpboard",
   },
@@ -66,6 +69,7 @@ const CLASSES = [
     intensity: "Recovery",
     bestFor: "Mobility",
     body: "Your body's reset button. Long, intentional stretches that undo tension and restore the way you were meant to move.",
+    slot: "home.class-types.sol-stretch",
     image: "/images/IMG_9787_.jpeg",
     alt: "Mermaid",
   },
@@ -82,6 +86,7 @@ function ClassStoryCard({
   cls: ClassItem;
   index: number;
 }) {
+  const media = useSiteMedia();
   return (
     <motion.article
       className={STYLES.card}
@@ -100,7 +105,7 @@ function ClassStoryCard({
           transition={{ duration: 0.95, ease: E }}
         >
             <Image
-              src={cls.image}
+              src={media.src(cls.slot, cls.image)}
               alt={cls.alt}
               fill
               className={STYLES.image}

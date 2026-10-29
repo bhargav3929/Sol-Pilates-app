@@ -1,5 +1,6 @@
 "use client"
 
+import { useSiteMedia } from "@/lib/hooks/useSiteMedia";
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { Clock, Phone, Mail, MapPin, Dumbbell, Waves, Shield, Zap, Heart, ChevronRight } from "lucide-react"
@@ -13,6 +14,7 @@ const AMENITY_ZONES = [
         name: "Strength & Sculpt",
         description: "Build lean muscle and define your physique through targeted Pilates exercises. Reformer resistance and controlled mat work sculpt long, toned muscles while building functional strength from your deep core outward.",
         icon: Dumbbell,
+        slot: "facilities.zone.strength-sculpt",
         image: "/images/service-strength-sculpt.jpg",
         features: ["Reformer Resistance", "Core Activation", "Targeted Sculpting", "Functional Strength"],
     },
@@ -21,6 +23,7 @@ const AMENITY_ZONES = [
         name: "Cardio & Endurance",
         description: "Elevate your heart rate and stamina with high-energy Pilates sequences. Dynamic jumpboard work, circuit-style reformer flows, and tempo-driven mat routines push cardiovascular limits with Pilates precision.",
         icon: Zap,
+        slot: "facilities.zone.cardio-endurance",
         image: "/images/service-cardio-endurance.jpg",
         features: ["Jumpboard Work", "Circuit Flows", "Tempo Routines", "Heart Rate Training"],
     },
@@ -29,6 +32,7 @@ const AMENITY_ZONES = [
         name: "Reset & Restore",
         description: "Reconnect with your body through mindful, restorative Pilates movement. Gentle stretching, breathwork, and slow-flow sequences release tension, improve mobility, and bring your nervous system back into balance.",
         icon: Heart,
+        slot: "facilities.zone.reset-restore",
         image: "/images/service-reset-restore.jpg",
         features: ["Gentle Stretching", "Breathwork", "Slow Flow", "Mobility Work"],
     },
@@ -37,6 +41,7 @@ const AMENITY_ZONES = [
         name: "Muscle Recovery",
         description: "Accelerate healing and prevent injury with targeted recovery techniques. Foam rolling, myofascial release, and therapeutic Pilates movements flush lactic acid and restore range of motion.",
         icon: Waves,
+        slot: "facilities.zone.muscle-recovery",
         image: "/images/service-muscle-recovery.jpg",
         features: ["Foam Rolling", "Myofascial Release", "Therapeutic Pilates", "Range of Motion"],
     },
@@ -45,6 +50,7 @@ const AMENITY_ZONES = [
         name: "Intense Exercise",
         description: "Push your limits with advanced Pilates challenges designed for peak performance. Explosive power moves, heavy spring resistance, and complex coordination drills — Pilates at its most demanding.",
         icon: Shield,
+        slot: "facilities.zone.intense-exercise",
         image: "/images/service-intense-exercise.jpg",
         features: ["Explosive Power", "Heavy Resistance", "Coordination Drills", "Peak Performance"],
     },
@@ -57,6 +63,7 @@ const FACILITY_HOURS = [
 ]
 
 export default function FacilityPage() {
+    const media = useSiteMedia();
     const [activeZone, setActiveZone] = useState<string>("strength-sculpt")
 
     const selectedZone = AMENITY_ZONES.find(z => z.id === activeZone)
@@ -117,7 +124,7 @@ export default function FacilityPage() {
                             {/* Image */}
                             <div className="relative h-[320px] lg:h-[420px] overflow-hidden border border-peach-400/20">
                                 <Image
-                                    src={selectedZone.image}
+                                    src={media.src(selectedZone.slot, selectedZone.image)}
                                     alt={selectedZone.name}
                                     fill
                                     className="object-cover"

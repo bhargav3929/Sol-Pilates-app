@@ -1,5 +1,6 @@
 "use client";
 
+import { useSiteMedia } from "@/lib/hooks/useSiteMedia";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { Reveal } from "@/lib/animation/Reveal";
@@ -32,18 +33,21 @@ const CARDS = [
   {
     label: "The Method",
     body: "Rooted in Contrology — the original Pilates system. Strength training principles built in, not bolted on.",
+    slot: "home.why-sol.method",
     image: "/images/IMG_9731.jpeg",
     alt: "Pilates instructor demonstrating a Contrology move",
   },
   {
     label: "The Space",
     body: "Inside Tavaro Resorts, Hyderabad. A studio that feels like a destination, because it is.",
+    slot: "home.why-sol.space",
     image: "/images/IMG_0992_.jpeg",
     alt: "Tavaro Resorts grounds",
   },
   {
     label: "The Result",
     body: "Less pain. More strength. A body that works for the life you're actually living.",
+    slot: "home.why-sol.result",
     image: "/images/IMG_9901.jpeg",
     alt: "Client living an active daily life",
   },
@@ -53,6 +57,7 @@ const E: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 // Card component — extracts image clip-path animation (cannot call hooks in .map)
 function WhySolCard({ card, index }: { card: (typeof CARDS)[0]; index: number }) {
+  const media = useSiteMedia();
   const prefersReduced = useReducedMotion();
 
   return (
@@ -97,7 +102,7 @@ function WhySolCard({ card, index }: { card: (typeof CARDS)[0]; index: number })
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
           <Image
-            src={card.image}
+            src={media.src(card.slot, card.image)}
             alt={card.alt}
             fill
             className={STYLES.cardImage}

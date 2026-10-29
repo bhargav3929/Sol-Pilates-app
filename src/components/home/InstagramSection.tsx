@@ -1,5 +1,6 @@
 "use client";
 
+import { useSiteMedia } from "@/lib/hooks/useSiteMedia";
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -26,7 +27,7 @@ const COPY = {
 };
 
 // TODO: replace with real IG-fed thumbs when API integration ships
-const THUMBS = [
+const THUMB_DEFAULTS = [
   "/images/sol-pilates-mat-brown.jpeg",
   "/images/sol-pilates-mat-olive.jpeg",
   "/images/service-muscle-recovery.jpg",
@@ -158,6 +159,8 @@ export function InstagramSection(props: {
   id?: string,
   hideImages?: boolean,
 }) {
+  const media = useSiteMedia();
+  const THUMBS = THUMB_DEFAULTS.map((src, i) => media.src(`home.instagram.${i + 1}`, src));
   const prefersReduced = useReducedMotion();
 
   return (

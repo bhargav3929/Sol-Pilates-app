@@ -1,4 +1,5 @@
 "use client";
+import { useSiteMedia } from "@/lib/hooks/useSiteMedia";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Instagram } from 'lucide-react';
@@ -45,6 +46,7 @@ const COPY = {
 };
 
 export function Footer() {
+    const media = useSiteMedia();
     return (
         <Reveal variant="slideUp" as="footer" duration={0.8} className="bg-warmDark-800 text-peach-200 py-20 relative overflow-hidden">
             {/* Cinematic Watermark */}
@@ -62,7 +64,7 @@ export function Footer() {
                     <div className="lg:col-span-4 space-y-8">
                         <Link href="/" className="inline-block group">
                             <Image
-                                src="/images/sol-logo-terra.png"
+                                src={media.src("brand.logo", "/images/sol-logo-terra.png")}
                                 alt={COPY.logoAlt}
                                 width={400}
                                 height={400}

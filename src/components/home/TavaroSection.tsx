@@ -1,5 +1,6 @@
 "use client";
 
+import { useSiteMedia } from "@/lib/hooks/useSiteMedia";
 import { useRef } from "react";
 import Image from "next/image";
 import {
@@ -38,6 +39,7 @@ const E: [number, number, number, number] = [0.22, 1, 0.36, 1];
 //  Component
 // ============================================================
 export function TavaroSection() {
+  const media = useSiteMedia();
   const sectionRef = useRef<HTMLElement>(null);
   const prefersReduced = useReducedMotion();
 
@@ -150,7 +152,7 @@ export function TavaroSection() {
             <div className="absolute inset-0 bg-peach-300" aria-hidden="true" />
             <motion.div className="absolute inset-0">
               <Image
-                src={IMAGES.hero.src}
+                src={media.src("home.tavaro.hero", IMAGES.hero.src)}
                 alt={IMAGES.hero.alt}
                 fill
                 className="object-cover object-center"
@@ -171,7 +173,7 @@ export function TavaroSection() {
               <div className="absolute inset-0 bg-peach-300" aria-hidden="true" />
               <motion.div className="absolute inset-0">
                 <Image
-                  src={IMAGES.grounds.src}
+                  src={media.src("home.tavaro.grounds", IMAGES.grounds.src)}
                   alt={IMAGES.grounds.alt}
                   fill
                   className="object-cover object-center"
@@ -193,7 +195,7 @@ export function TavaroSection() {
                 style={prefersReduced ? {} : { y: smallImageY }}
               >
                 <Image
-                  src={IMAGES.studio.src}
+                  src={media.src("home.tavaro.studio", IMAGES.studio.src)}
                   alt={IMAGES.studio.alt}
                   fill
                   className="object-cover object-center"

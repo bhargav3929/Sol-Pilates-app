@@ -1,5 +1,6 @@
 "use client";
 
+import { useSiteMedia } from "@/lib/hooks/useSiteMedia";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,6 +9,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { MobileMenu } from "./MobileMenu";
 
 export function Header() {
+    const media = useSiteMedia();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const pathname = usePathname();
@@ -42,7 +44,7 @@ export function Header() {
                     {/* Logo */}
                     <Link href="/" className="relative z-50 rounded-lg transition-all duration-300">
                         <Image
-                            src="/images/sol-logo-terra.png"
+                            src={media.src("brand.logo", "/images/sol-logo-terra.png")}
                             alt="SOL Pilates Studio"
                             width={400}
                             height={400}

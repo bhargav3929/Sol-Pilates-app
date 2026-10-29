@@ -13,6 +13,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { GetStartedModal } from "@/components/auth/GetStartedModal";
+import { useSiteMedia } from "@/lib/hooks/useSiteMedia";
 import { useClientAuthStore } from "@fitconnect/shared/stores/clientAuthStore";
 
 // ============================================================
@@ -59,6 +60,9 @@ const E: [number, number, number, number] = [0.22, 1, 0.36, 1];
 //  Component
 // ============================================================
 export function HeroSection() {
+  const media = useSiteMedia();
+  const heroVideoSrc = media.src("home.hero.video", MEDIA.videoSrc);
+  const heroPoster = media.src("home.hero.poster", MEDIA.poster);
   const router = useRouter();
   const { isAuthenticated } = useClientAuthStore();
   const [showGetStarted, setShowGetStarted] = useState(false);
@@ -123,7 +127,9 @@ export function HeroSection() {
       >
         <div ref={videoInnerRef} className="absolute inset-0">
           <video
+            key={heroVideoSrc}
             ref={videoRef}
+            poster={heroPoster}
             autoPlay
             loop
             muted
@@ -133,8 +139,10 @@ export function HeroSection() {
             className={STYLES.video}
             style={{ opacity: videoReady ? 1 : 0, transition: "opacity 0.6s ease-out" }}
           >
-            <source src="/videos/Background_option_1.webm" type="video/webm" />
-            <source src={MEDIA.videoSrc} type="video/mp4" />
+            {heroVideoSrc === MEDIA.videoSrc && (
+              <source src="/videos/Background_option_1.webm" type="video/webm" />
+            )}
+            <source src={heroVideoSrc} type={heroVideoSrc.endsWith(".webm") ? "video/webm" : "video/mp4"} />
           </video>
         </div>
       </motion.div>
