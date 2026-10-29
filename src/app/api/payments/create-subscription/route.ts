@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { getPlanById, VALID_PLAN_IDS } from '@fitconnect/shared/types/subscription';
+import { getEffectivePlan } from '@/lib/plans/catalog';
 import { createRazorpaySubscription } from '@fitconnect/shared/payments/razorpay-processor';
 import { getChargeBreakdown, getSyncedPlanEntry } from '@/lib/razorpay/pricing';
 import { GST_RATE_PERCENT } from '@fitconnect/shared/utils/gst';
@@ -40,7 +41,10 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const plan = getPlanById(planId)!;
+        const plan = (await getEffectivePlan(planId))!;
+        if (plan.hidden) {
+            return NextResponse.json({ error: 'This plan is not available right now.', code: 'plan-unavailable' }, { status: 400 });
+        }
 
         if (plan.category !== 'membership') {
             return NextResponse.json(

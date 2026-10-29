@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
-import { getPlanById, LEGACY_PLAN_MAP, VALID_PLAN_IDS, type PlanId } from '@fitconnect/shared/types/subscription';
+import { LEGACY_PLAN_MAP, VALID_PLAN_IDS, type PlanId } from '@fitconnect/shared/types/subscription';
+import { getEffectivePlan } from '@/lib/plans/catalog';
 import { FieldValue } from 'firebase-admin/firestore';
 import { recordSubscriptionEvent, subscriptionChanges } from '@/lib/subscription-events';
 import { processPayment } from '@fitconnect/shared/payments/mock-processor';
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const plan = getPlanById(planId)!;
+        const plan = (await getEffectivePlan(planId))!;
 
         // Verify user exists
         const userRef = adminDb.collection('users').doc(userId);

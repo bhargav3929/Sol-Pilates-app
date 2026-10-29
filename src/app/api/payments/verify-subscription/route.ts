@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { getPlanById } from '@fitconnect/shared/types/subscription';
+import { getEffectivePlan } from '@/lib/plans/catalog';
 import { verifyPaymentSignature } from '@fitconnect/shared/payments/razorpay-processor';
 import { FieldValue } from 'firebase-admin/firestore';
 import { recordSubscriptionEvent, subscriptionChanges } from '@/lib/subscription-events';
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
             if (paymentData.userId !== userId) throw { status: 403, error: 'Payment does not belong to you', code: 'permission-denied' };
             if (paymentData.status !== 'pending') throw { status: 400, error: `Payment is already ${paymentData.status}`, code: 'failed-precondition' };
 
-            const plan = getPlanById(paymentData.planId);
+            const plan = await getEffectivePlan(paymentData.planId);
             if (!plan) throw { status: 400, error: 'Invalid plan on payment', code: 'failed-precondition' };
 
             const currentSub = userDoc.data()!.subscription as Record<string, unknown> | undefined;

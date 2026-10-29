@@ -18,7 +18,7 @@ import {
     callVerifyPayment,
     callVerifyRazorpaySubscription,
 } from "@fitconnect/shared/firebase/firestore"
-import { getPlanById, type PlanId } from "@fitconnect/shared/types/subscription"
+import { PLAN_CATALOG, findPlan, type PlanDefinition, type PlanId } from "@fitconnect/shared/types/subscription"
 import type { ClientUser } from "@fitconnect/shared/types/client"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
@@ -48,6 +48,8 @@ export default function SubscribePage() {
     const { openCheckout } = useRazorpay()
 
     const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({})
+    // Defaults + admin edits from the server; the static catalog is the offline fallback.
+    const [catalog, setCatalog] = useState<PlanDefinition[]>(PLAN_CATALOG)
 
     useEffect(() => {
         callGetPricing()
@@ -57,6 +59,7 @@ export default function SubscribePage() {
                     overrides[p.planId] = p.price
                 }
                 setPriceOverrides(overrides)
+                if (data.catalog?.length) setCatalog(data.catalog)
             })
             .catch(() => {/* use hardcoded fallback */})
     }, [])
@@ -75,9 +78,9 @@ export default function SubscribePage() {
     const [isCancelling, setIsCancelling] = useState(false)
     const [isLoadingPortal, setIsLoadingPortal] = useState(false)
 
-    const selectedPlan = selectedPlanId ? getPlanById(selectedPlanId) : null
+    const selectedPlan = selectedPlanId ? findPlan(catalog, selectedPlanId) : null
     const hasActiveSubscription = isActiveUnexpiredSubscription(clientUser?.subscription)
-    const currentPlan = clientUser?.subscription.planId ? getPlanById(clientUser.subscription.planId) : null
+    const currentPlan = clientUser?.subscription.planId ? findPlan(catalog, clientUser.subscription.planId) : null
     const hasActiveMembership = hasActiveSubscription && (clientUser?.subscription.planCategory === 'membership' || currentPlan?.category === 'membership')
     const selectedCurrentPlan = hasActiveMembership && selectedPlanId === clientUser?.subscription.planId
     const renewalCanceled = clientUser?.subscription.cancelAtPeriodEnd === true
@@ -128,7 +131,7 @@ export default function SubscribePage() {
                     return
                 }
 
-                const plan = getPlanById(result.planId)
+                const plan = findPlan(catalog, result.planId)
                 setResultData({
                     planName: result.planName,
                     credits: plan?.credits ?? null,
@@ -451,6 +454,7 @@ export default function SubscribePage() {
                             selectedPlanId={selectedPlanId}
                             onSelect={setSelectedPlanId}
                             priceOverrides={priceOverrides}
+                            plans={catalog}
                             selectedPlanAction={
                         <Button
                             onClick={handleContinueToCheckout}

@@ -1,5 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { PLAN_CATALOG, type PlanDefinition, type PlanId } from '@fitconnect/shared/types/subscription';
+import { getEffectiveCatalog } from '@/lib/plans/catalog';
 import { listRazorpayItems, listRazorpayPlans } from '@fitconnect/shared/payments/razorpay-processor';
 import { applyGstToRupees, type GstBreakdown } from '@fitconnect/shared/utils/gst';
 
@@ -42,6 +43,8 @@ export interface SyncedPricing {
     plans: SyncedPlanEntry[];
     lastSyncedAt: string | null;
     source: PricingSource;
+    /** Effective plan catalog (defaults + admin overrides). Attached on read. */
+    catalog?: PlanDefinition[];
 }
 
 const PRICING_CACHE_MS = 5 * 60 * 1000;
@@ -61,8 +64,8 @@ function pricingCacheDocId(keyId: string | undefined): string {
     return keyId?.startsWith('rzp_test') ? 'razorpayPlans-test' : 'razorpayPlans';
 }
 
-function buildFallbackPlans(): SyncedPlanEntry[] {
-    return PLAN_CATALOG.map((plan) => ({
+function buildFallbackPlans(catalog: PlanDefinition[] = PLAN_CATALOG): SyncedPlanEntry[] {
+    return catalog.map((plan) => ({
         planId: plan.id,
         name: plan.name,
         price: plan.price,
@@ -107,12 +110,13 @@ function normalizeStoredPricing(data: Record<string, unknown> | undefined): Sync
     };
 }
 
-export async function syncRazorpayPricing(): Promise<SyncedPricing> {
+export async function syncRazorpayPricing(catalogInput?: PlanDefinition[]): Promise<SyncedPricing> {
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const catalog = catalogInput ?? await getEffectiveCatalog();
 
     if (!keyId || !keySecret) {
-        return { plans: buildFallbackPlans(), lastSyncedAt: null, source: 'static' };
+        return { plans: buildFallbackPlans(catalog), lastSyncedAt: null, source: 'static' };
     }
 
     type RazorpayPlanMatch = { razorpayPlanId: string; amountPaise: number; basePaise: number | null; createdAt: number };
@@ -174,7 +178,7 @@ export async function syncRazorpayPricing(): Promise<SyncedPricing> {
             ?? sortedMatches[0];
     };
 
-    const plans: SyncedPlanEntry[] = PLAN_CATALOG.map((plan) => {
+    const plans: SyncedPlanEntry[] = catalog.map((plan) => {
         const planMatch = selectStandardPlan(planMap.get(plan.id));
         const foundingPlanMatch = selectFoundingPlan(foundingPlanMap.get(plan.id), plan);
         const itemMatch = itemMap.get(plan.id);
@@ -256,16 +260,29 @@ export async function syncRazorpayPricing(): Promise<SyncedPricing> {
 }
 
 /**
- * Attaches the customer-facing charge breakdown to each entry, so every surface
- * (pricing page, plan selector, mobile) renders the same numbers checkout uses
- * instead of each recomputing GST and drifting.
+ * Applies the effective catalog to a pricing snapshot and attaches the
+ * customer-facing charge breakdown, so every surface (pricing page, plan
+ * selector, mobile) renders the same numbers checkout uses.
+ *
+ * Admin overrides win for names and for class-pack prices, because our own code
+ * sets pack order amounts. Membership prices stay as the Razorpay plan charges
+ * them: a membership price edit creates a new Razorpay plan and re-syncs, so
+ * the synced amount is the truth about what a new member will pay.
  */
-function withChargeBreakdowns(pricing: SyncedPricing): SyncedPricing {
+function applyCatalog(pricing: SyncedPricing, catalog: PlanDefinition[]): SyncedPricing {
     return {
         ...pricing,
-        plans: pricing.plans.map((entry) => {
-            const plan = PLAN_CATALOG.find((p) => p.id === entry.planId);
-            if (!plan) return entry;
+        catalog,
+        plans: pricing.plans.map((stored) => {
+            const plan = catalog.find((p) => p.id === stored.planId);
+            if (!plan) return stored;
+            const entry: SyncedPlanEntry = { ...stored, name: plan.name, category: plan.category };
+            if (plan.category === 'class_pack') {
+                entry.price = plan.price;
+                entry.foundingPrice = plan.foundingPrice ?? null;
+            } else if (!entry.foundingRazorpayPlanId) {
+                entry.foundingPrice = plan.foundingPrice ?? null;
+            }
             return {
                 ...entry,
                 charge: getChargeBreakdown(plan, entry, false),
@@ -277,6 +294,7 @@ function withChargeBreakdowns(pricing: SyncedPricing): SyncedPricing {
 
 export async function getSyncedPricing(): Promise<SyncedPricing> {
     const keyId = process.env.RAZORPAY_KEY_ID;
+    const catalog = await getEffectiveCatalog();
 
     try {
         const settingsDoc = await adminDb.collection('settings').doc(pricingCacheDocId(keyId)).get();
@@ -293,17 +311,17 @@ export async function getSyncedPricing(): Promise<SyncedPricing> {
                 `this environment uses ${keyId ?? 'no key'}; ignoring the cache and re-syncing.`,
             );
         } else if (stored && lastSyncedAt && Date.now() - lastSyncedAt < PRICING_CACHE_MS) {
-            return withChargeBreakdowns(stored);
+            return applyCatalog(stored, catalog);
         }
     } catch (error) {
         console.warn('[pricing] Failed to read stored Razorpay pricing:', error);
     }
 
     try {
-        return withChargeBreakdowns(await syncRazorpayPricing());
+        return applyCatalog(await syncRazorpayPricing(catalog), catalog);
     } catch (error) {
         console.error('[pricing] Failed to sync Razorpay pricing:', error);
-        return withChargeBreakdowns({ plans: buildFallbackPlans(), lastSyncedAt: null, source: 'static' });
+        return applyCatalog({ plans: buildFallbackPlans(catalog), lastSyncedAt: null, source: 'static' }, catalog);
     }
 }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue, type DocumentReference } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
-import { getPlanById } from '@fitconnect/shared/types/subscription';
+import { getEffectivePlan } from '@/lib/plans/catalog';
 import { verifyWebhookSignature, type RazorpaySubscriptionEntity } from '@fitconnect/shared/payments/razorpay-processor';
 import { getPlanIdForRazorpayPlanId, getPricingVariantForRazorpayPlanId } from '@/lib/razorpay/pricing';
 import { findPaymentRefForOrder, grantOrderAccess } from '@/lib/payments/order-access';
@@ -171,7 +171,7 @@ async function applySubscriptionAccess(
 
     const planId = await getPlanIdForRazorpayPlanId(sub.plan_id);
     const pricingVariant = await getPricingVariantForRazorpayPlanId(sub.plan_id);
-    const plan = planId ? getPlanById(planId) : null;
+    const plan = planId ? await getEffectivePlan(planId) : null;
     if (!plan) {
         note(ctx, `${options.source}: no app plan mapped for razorpayPlanId=${sub.plan_id}`);
         await recordSubscriptionEvent(null, {

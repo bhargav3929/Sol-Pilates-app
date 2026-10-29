@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckIcon, SparklesIcon } from 'lucide-react';
-import { PLAN_CATALOG, type PlanDefinition } from '@fitconnect/shared/types/subscription';
+import { PLAN_CATALOG, purchasablePlans, type PlanDefinition } from '@fitconnect/shared/types/subscription';
 import { applyGstToRupees, formatPaise, GST_RATE_PERCENT, type GstBreakdown } from '@fitconnect/shared/utils/gst';
 import { useIntroClassLead } from '@/lib/hooks/useIntroClassLead';
 import { callGetPricing } from '@fitconnect/shared/firebase/firestore';
@@ -53,9 +53,11 @@ function GstNote({ charge, className }: { charge: GstBreakdown; className?: stri
 
 function priceSuffix(plan: PlanDefinition) {
     if (plan.id === 'drop_in') return '/ session';
-    if (plan.id === 'single_session') return '/ class';
-    if (plan.id === 'kickstarter') return '/ 4 classes';
-    if (plan.id === 'ten_class_pack') return '/ 10 classes';
+    if (plan.category === 'class_pack') {
+        if (plan.credits === 1) return '/ class';
+        if (plan.credits && plan.credits > 1) return `/ ${plan.credits} classes`;
+        return '';
+    }
     if (plan.durationDays === 30) return '/ month';
     if (plan.durationDays === 90) return '/ quarter';
     if (plan.durationDays === 180) return '/ 6 months';
@@ -400,10 +402,13 @@ export function BentoPricing() {
     const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
     const [chargeOverrides, setChargeOverrides] = useState<Record<string, GstBreakdown>>({});
     const [foundingChargeOverrides, setFoundingChargeOverrides] = useState<Record<string, GstBreakdown>>({});
+    // Defaults + admin edits (names, copy, prices, hidden plans). Static catalog is the fallback.
+    const [catalog, setCatalog] = useState<PlanDefinition[]>(PLAN_CATALOG);
 
     useEffect(() => {
         callGetPricing()
             .then(data => {
+                if (data.catalog?.length) setCatalog(data.catalog);
                 const overrides: Record<string, number> = {};
                 const charges: Record<string, GstBreakdown> = {};
                 const foundingCharges: Record<string, GstBreakdown> = {};
@@ -429,47 +434,48 @@ export function BentoPricing() {
         router.push(`/user/subscribe?plan=${planId}`);
     };
 
-    const dropIn = PLAN_CATALOG.find((p) => p.id === 'drop_in')!;
-    const singleSession = PLAN_CATALOG.find((p) => p.id === 'single_session')!;
-    const kickstarter = PLAN_CATALOG.find((p) => p.id === 'kickstarter')!;
-    const tenClassPack = PLAN_CATALOG.find((p) => p.id === 'ten_class_pack')!;
-    const memberships = PLAN_CATALOG.filter((p) => p.category === 'membership');
+    const visible = purchasablePlans(catalog);
+    const classPacks = visible.filter((p) => p.category === 'class_pack');
+    const memberships = visible.filter((p) => p.category === 'membership');
+
+    const packCta = (plan: PlanDefinition): { cta: string; disabled?: boolean; featured?: boolean } => {
+        if (plan.id === 'drop_in') {
+            return { cta: hasIntroClassLead === true ? 'DEMO CLASS BOOKED' : 'BOOK DEMO CLASS', disabled: hasIntroClassLead === true };
+        }
+        if (plan.id === 'single_session') return { cta: 'BOOK A CLASS' };
+        if (plan.id === 'kickstarter') return { cta: 'START KICKSTARTER', featured: true };
+        if (plan.credits && plan.credits > 1) return { cta: `BUY ${plan.credits} CLASSES` };
+        return { cta: 'BUY NOW' };
+    };
+
+    const packGridCols = classPacks.length >= 4
+        ? 'lg:grid-cols-4'
+        : classPacks.length === 3
+            ? 'lg:grid-cols-3'
+            : 'lg:grid-cols-2';
 
     return (
         <div className="space-y-24">
             {/* SECTION 1: TRY IT */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-                <IntroCard
-                    plan={dropIn}
-                    onSelect={handleSelect}
-                    cta={hasIntroClassLead === true ? 'DEMO CLASS BOOKED' : 'BOOK DEMO CLASS'}
-                    ctaDisabled={hasIntroClassLead === true}
-                    displayPrice={priceOverrides[dropIn.id]}
-                    charge={chargeOverrides[dropIn.id]}
-                />
-                <IntroCard
-                    plan={singleSession}
-                    onSelect={handleSelect}
-                    cta="BOOK A CLASS"
-                    displayPrice={priceOverrides[singleSession.id]}
-                    charge={chargeOverrides[singleSession.id]}
-                />
-                <IntroCard
-                    plan={kickstarter}
-                    onSelect={handleSelect}
-                    cta="START KICKSTARTER"
-                    featured
-                    displayPrice={priceOverrides[kickstarter.id]}
-                    charge={chargeOverrides[kickstarter.id]}
-                />
-                <IntroCard
-                    plan={tenClassPack}
-                    onSelect={handleSelect}
-                    cta="BUY 10 CLASSES"
-                    displayPrice={priceOverrides[tenClassPack.id]}
-                    charge={chargeOverrides[tenClassPack.id]}
-                />
-            </div>
+            {classPacks.length > 0 && (
+                <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto', packGridCols)}>
+                    {classPacks.map((plan) => {
+                        const { cta, disabled, featured } = packCta(plan);
+                        return (
+                            <IntroCard
+                                key={plan.id}
+                                plan={plan}
+                                onSelect={handleSelect}
+                                cta={cta}
+                                ctaDisabled={disabled}
+                                featured={featured}
+                                displayPrice={priceOverrides[plan.id]}
+                                charge={chargeOverrides[plan.id]}
+                            />
+                        );
+                    })}
+                </div>
+            )}
 
             {/* SECTION 2: MEMBERSHIPS */}
             <div className="space-y-6">

@@ -19,6 +19,7 @@ import {
     type Unsubscribe,
 } from 'firebase/firestore';
 import type { GstBreakdown } from '../utils/gst';
+import type { PlanDefinition, PlanId, PlanOverride } from '../types/subscription';
 import { db, auth } from './config';
 import { getApiBaseUrl } from './api-config';
 import { UserProfile } from '../types/user';
@@ -967,6 +968,8 @@ export async function callGetPricing(): Promise<{
     }>;
     lastSyncedAt: string | null;
     source: 'plans' | 'items' | 'static';
+    /** Effective plan catalog (defaults + admin overrides). Absent from older servers. */
+    catalog?: PlanDefinition[];
 }> {
     // Public endpoint — no auth needed
     const baseUrl = getApiBaseUrl();
@@ -990,7 +993,63 @@ export async function callGetPricing(): Promise<{
         }>;
         lastSyncedAt: string | null;
         source: 'plans' | 'items' | 'static';
+        catalog?: PlanDefinition[];
     }>;
+}
+
+// ---------------------------------------------------------------------------
+// 17n. Admin plan catalog — edit packages and pricing from the admin panel
+// ---------------------------------------------------------------------------
+
+export interface AdminPlanRazorpayStatus {
+    razorpayPlanId: string | null;
+    foundingRazorpayPlanId: string | null;
+    /** Amount the live Razorpay plan charges, in paise (GST-inclusive). */
+    amountPaise: number | null;
+    foundingAmountPaise: number | null;
+    /** True when the Razorpay plan amount matches the effective catalog price + GST. */
+    inSync: boolean;
+    lastSyncedAt: string | null;
+}
+
+export interface AdminPlanEntry {
+    plan: PlanDefinition;
+    defaults: PlanDefinition;
+    override: PlanOverride | null;
+    razorpay: AdminPlanRazorpayStatus | null;
+}
+
+export interface AdminPlanHistoryEntry {
+    id: string;
+    planId: string;
+    action: 'update' | 'reset';
+    changes: Record<string, { from: unknown; to: unknown }>;
+    razorpayPlanIds?: Record<string, string>;
+    adminEmail: string | null;
+    createdAt: string | null;
+}
+
+export interface AdminPlansResponse {
+    plans: AdminPlanEntry[];
+    history: AdminPlanHistoryEntry[];
+    razorpayMode: 'live' | 'test' | 'unconfigured';
+}
+
+export async function callAdminGetPlans(): Promise<AdminPlansResponse> {
+    return apiFetch<AdminPlansResponse>('/api/admin/plans');
+}
+
+export async function callAdminUpdatePlan(
+    planId: PlanId,
+    override: PlanOverride,
+): Promise<{ success: boolean; plan: AdminPlanEntry; razorpayPlanIds?: Record<string, string> }> {
+    return apiFetch('/api/admin/plans', { method: 'PUT', body: { planId, override } });
+}
+
+export async function callAdminResetPlan(
+    planId: PlanId,
+): Promise<{ success: boolean; plan: AdminPlanEntry; razorpayPlanIds?: Record<string, string> }> {
+    return apiFetch(`/api/admin/plans?planId=${encodeURIComponent(planId)}`, { method: 'DELETE' });
 }
 
 // ---------------------------------------------------------------------------

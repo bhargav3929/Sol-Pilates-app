@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
-import { getPlanById } from '@fitconnect/shared/types/subscription';
+import { getEffectivePlan } from '@/lib/plans/catalog';
 import { FieldValue } from 'firebase-admin/firestore';
 import { recordSubscriptionEvent, subscriptionChanges } from '@/lib/subscription-events';
 import { FRESH_PLAN_POLICY_STATE } from '@/lib/subscriptions/billing';
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
             }
 
             // Look up plan
-            const plan = getPlanById(paymentData.planId);
+            const plan = await getEffectivePlan(paymentData.planId);
             if (!plan) {
                 throw { status: 400, error: 'Invalid plan on payment', code: 'failed-precondition' };
             }

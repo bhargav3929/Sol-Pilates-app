@@ -3,7 +3,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { recordSubscriptionEvent, subscriptionChanges } from '@/lib/subscription-events';
 import { FRESH_PLAN_POLICY_STATE } from '@/lib/subscriptions/billing';
-import { getPlanById } from '@fitconnect/shared/types/subscription';
+import { getEffectivePlan } from '@/lib/plans/catalog';
 import { STUDIO_UTC_OFFSET_MINUTES } from '@fitconnect/shared/schedule/studio-day';
 
 // ---------------------------------------------------------------------------
@@ -64,7 +64,7 @@ export async function PATCH(req: NextRequest) {
 
         if (typeof userId !== 'string' || !userId) return invalid('userId is required');
         if (typeof reason !== 'string' || reason.trim().length < 3) return invalid('Add a short reason for this change');
-        const plan = planId === undefined ? null : typeof planId === 'string' ? getPlanById(planId) : undefined;
+        const plan = planId === undefined ? null : typeof planId === 'string' ? await getEffectivePlan(planId) : undefined;
         if (plan === undefined) return invalid('Unknown plan');
         if (classesRemaining !== undefined && classesRemaining !== null && !isCount(classesRemaining)) return invalid('Class credits must be a whole number from 0 to 999');
         if (classesRemaining === null && plan && plan.credits !== null) return invalid('Unlimited credits are only for unlimited plans');

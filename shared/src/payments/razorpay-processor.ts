@@ -178,6 +178,52 @@ export async function fetchRazorpaySubscription(
     return result;
 }
 
+export interface CreateRazorpayPlanInput {
+    /** Our PlanId, recorded in notes so pricing sync can match it. */
+    planId: string;
+    variant: 'standard' | 'founding';
+    /** Customer-facing name shown on the Razorpay plan. */
+    name: string;
+    /** GST-exclusive base in paise, recorded in notes. */
+    basePaise: number;
+    /** Amount actually charged per cycle, in paise (base + GST). */
+    totalPaise: number;
+    gstBps: number;
+    period: 'monthly';
+    interval: number;
+}
+
+/**
+ * Creates a Razorpay Plan. Plan amounts are immutable, so a price change means
+ * a new plan; pricing sync picks the newest plan per planId/variant.
+ */
+export async function createRazorpayPlan(
+    input: CreateRazorpayPlanInput,
+    keyId: string,
+    keySecret: string,
+): Promise<{ id: string; amount: number }> {
+    const client = new Razorpay({ key_id: keyId, key_secret: keySecret });
+    const plan = await (client.plans as unknown as {
+        create: (params: Record<string, unknown>) => Promise<{ id: string; item: { amount: number } }>;
+    }).create({
+        period: input.period,
+        interval: input.interval,
+        item: {
+            name: `${input.name}${input.variant === 'founding' ? ' (Founding)' : ''} - incl. GST`,
+            amount: input.totalPaise,
+            currency: 'INR',
+        },
+        notes: {
+            fitconnect_plan_id: input.planId,
+            fitconnect_variant: input.variant,
+            fitconnect_gst_bps: String(input.gstBps),
+            fitconnect_base_paise: String(input.basePaise),
+            fitconnect_created_by: 'admin-panel',
+        },
+    });
+    return { id: plan.id, amount: plan.item.amount };
+}
+
 /**
  * Lists all Razorpay plans. Returns plans with their item amounts (in paise) and notes.
  * Use notes.fitconnect_plan_id to match against our PlanId values.

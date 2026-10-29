@@ -3,6 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { recordSubscriptionEvent, subscriptionChanges } from '@/lib/subscription-events';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { getPlanById, VALID_PLAN_IDS, type PlanId } from '@fitconnect/shared/types/subscription';
+import { getEffectivePlan } from '@/lib/plans/catalog';
 import { updateRazorpaySubscription } from '@fitconnect/shared/payments/razorpay-processor';
 import { getChargeAmount, getSyncedPlanEntry } from '@/lib/razorpay/pricing';
 import { accessEndDate } from '@/lib/subscriptions/billing';
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const targetPlan = getPlanById(planId)!;
+        const targetPlan = (await getEffectivePlan(planId))!;
         if (targetPlan.category !== 'membership') {
             return NextResponse.json(
                 { error: 'Only membership subscriptions can be updated.', code: 'invalid-argument' },
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const currentPlanForPricing = currentPlanId ? getPlanById(currentPlanId) : null;
+        const currentPlanForPricing = currentPlanId ? await getEffectivePlan(currentPlanId) : null;
         const syncedCurrentPlan = currentPlanForPricing ? await getSyncedPlanEntry(currentPlanForPricing.id) : null;
         const currentFoundingDiscountEligible = isFoundingMember && !!currentPlanForPricing?.foundingPrice;
         const currentPrice = currentPlanForPricing

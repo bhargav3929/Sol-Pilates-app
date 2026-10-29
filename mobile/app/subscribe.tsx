@@ -30,7 +30,7 @@ function loadRazorpay(): RazorpayCheckoutModule {
     }
     return checkout;
 }
-import { PLAN_CATALOG, getPlanById } from '@fitconnect/shared/types/subscription';
+import { PLAN_CATALOG, findPlan, purchasablePlans } from '@fitconnect/shared/types/subscription';
 import type { PlanDefinition, PlanCategory } from '@fitconnect/shared/types/subscription';
 import {
     callAbandonRazorpaySubscription,
@@ -344,6 +344,8 @@ export default function SubscribeScreen() {
     const [activeTab, setActiveTab] = useState<PlanCategory>('membership');
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
     const [chargeOverrides, setChargeOverrides] = useState<Record<string, GstBreakdown>>({});
+    // Defaults + admin edits from the server; the static catalog is the offline fallback.
+    const [catalog, setCatalog] = useState<PlanDefinition[]>(PLAN_CATALOG);
 
     // Processing state
     const [paymentState, setPaymentState] = useState<
@@ -353,11 +355,11 @@ export default function SubscribeScreen() {
 
     // Filtered plans
     const filteredPlans = useMemo(
-        () => PLAN_CATALOG.filter((p) => p.category === activeTab),
-        [activeTab],
+        () => purchasablePlans(catalog).filter((p) => p.category === activeTab),
+        [catalog, activeTab],
     );
 
-    const selectedPlan = selectedPlanId ? getPlanById(selectedPlanId) : null;
+    const selectedPlan = selectedPlanId ? findPlan(catalog, selectedPlanId) : null;
     // Membership prices arrive from the API GST-INCLUSIVE, so re-applying GST to
     // them would double-count. The server sends the authoritative split.
     const chargeFor = useCallback(
@@ -370,7 +372,7 @@ export default function SubscribeScreen() {
         !clientUser.subscription.endDate ||
         new Date(clientUser.subscription.endDate).getTime() > Date.now()
     );
-    const currentPlan = clientUser?.subscription?.planId ? getPlanById(clientUser.subscription.planId) : null;
+    const currentPlan = clientUser?.subscription?.planId ? findPlan(catalog, clientUser.subscription.planId) : null;
     const activePlanIsMembership = clientUser?.subscription?.planCategory === 'membership' || currentPlan?.category === 'membership';
     const hasActiveMembership = hasActiveSubscription && (clientUser?.subscription?.planCategory === 'membership' || currentPlan?.category === 'membership');
     const selectedCurrentPlan = hasActiveMembership && selectedPlan?.id === clientUser?.subscription?.planId;
@@ -420,6 +422,7 @@ export default function SubscribeScreen() {
                     if (plan.charge) overrides[plan.planId] = plan.charge;
                 }
                 setChargeOverrides(overrides);
+                if (data.catalog?.length) setCatalog(data.catalog);
             })
             .catch(() => {
                 // Static PLAN_CATALOG prices remain the offline fallback.

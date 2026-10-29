@@ -41,6 +41,8 @@ export interface PlanDefinition {
     tagline?: string;
     recommended?: boolean;
     requiresConsultation?: boolean;
+    /** Hidden plans are not offered for purchase, but existing holders keep their access. */
+    hidden?: boolean;
 }
 
 export const PLAN_CATALOG: PlanDefinition[] = [
@@ -307,3 +309,101 @@ export const LEGACY_PLAN_MAP: Record<string, PlanId> = {
     five_pack: 'twice_quarterly',
     ten_pack: 'twice_6mo',
 };
+
+// ---------------------------------------------------------------------------
+// Admin overrides
+//
+// PLAN_CATALOG is the compiled-in default. Admins can adjust the fields below
+// from /admin/plans; the overrides live in Firestore (settings/planCatalog) and
+// are merged on top of the defaults by applyPlanOverrides. Plan IDs, category,
+// and Razorpay billing period are fixed in code because booking, payment and
+// webhook logic key off them.
+// ---------------------------------------------------------------------------
+
+export interface PlanOverride {
+    name?: string;
+    /** INR rupees, GST-exclusive. */
+    price?: number;
+    /** INR rupees, GST-exclusive. null removes the founding offer. */
+    foundingPrice?: number | null;
+    credits?: number | null;
+    durationDays?: number;
+    weeklyClassLimit?: number;
+    guestPasses?: number;
+    tagline?: string;
+    features?: string[];
+    recommended?: boolean;
+    hidden?: boolean;
+}
+
+export type PlanOverrideMap = Partial<Record<PlanId, PlanOverride>>;
+
+export const PLAN_OVERRIDE_LIMITS = {
+    name: { min: 2, max: 60 },
+    price: { min: 0, max: 1_000_000 },
+    credits: { min: 0, max: 999 },
+    durationDays: { min: 1, max: 730 },
+    weeklyClassLimit: { min: 1, max: 7 },
+    guestPasses: { min: 0, max: 20 },
+    tagline: { max: 240 },
+    features: { maxItems: 8, maxLength: 80 },
+} as const;
+
+export const PLAN_OVERRIDE_FIELDS = [
+    'name',
+    'price',
+    'foundingPrice',
+    'credits',
+    'durationDays',
+    'weeklyClassLimit',
+    'guestPasses',
+    'tagline',
+    'features',
+    'recommended',
+    'hidden',
+] as const satisfies ReadonlyArray<keyof PlanOverride>;
+
+/** Merges one override onto a plan. Undefined fields keep the default. */
+export function applyPlanOverride(plan: PlanDefinition, override: PlanOverride | undefined): PlanDefinition {
+    if (!override) return plan;
+    const merged: PlanDefinition = { ...plan };
+    if (typeof override.name === 'string' && override.name.trim()) merged.name = override.name.trim();
+    if (typeof override.price === 'number' && Number.isFinite(override.price)) merged.price = override.price;
+    if (override.foundingPrice === null) {
+        delete merged.foundingPrice;
+    } else if (typeof override.foundingPrice === 'number' && Number.isFinite(override.foundingPrice)) {
+        merged.foundingPrice = override.foundingPrice;
+    }
+    if (override.credits === null || (typeof override.credits === 'number' && Number.isFinite(override.credits))) {
+        merged.credits = override.credits;
+    }
+    if (typeof override.durationDays === 'number' && override.durationDays > 0) merged.durationDays = override.durationDays;
+    if (typeof override.weeklyClassLimit === 'number' && override.weeklyClassLimit > 0) merged.weeklyClassLimit = override.weeklyClassLimit;
+    if (typeof override.guestPasses === 'number' && override.guestPasses >= 0) merged.guestPasses = override.guestPasses;
+    if (typeof override.tagline === 'string') merged.tagline = override.tagline.trim() || undefined;
+    if (Array.isArray(override.features)) {
+        merged.features = override.features.map((f) => String(f).trim()).filter(Boolean);
+    }
+    if (typeof override.recommended === 'boolean') merged.recommended = override.recommended;
+    if (typeof override.hidden === 'boolean') merged.hidden = override.hidden;
+    return merged;
+}
+
+/** The catalog as customers should see it: defaults with admin overrides applied. */
+export function applyPlanOverrides(
+    overrides: PlanOverrideMap | null | undefined,
+    catalog: PlanDefinition[] = PLAN_CATALOG,
+): PlanDefinition[] {
+    if (!overrides) return catalog;
+    return catalog.map((plan) => applyPlanOverride(plan, overrides[plan.id]));
+}
+
+/** Look up a plan in an effective catalog (falls back to the static catalog). */
+export function findPlan(catalog: PlanDefinition[] | null | undefined, id: string): PlanDefinition | undefined {
+    return (catalog ?? PLAN_CATALOG).find((p) => p.id === id);
+}
+
+/** Plans a customer may buy right now. */
+export function purchasablePlans(catalog: PlanDefinition[]): PlanDefinition[] {
+    return catalog.filter((p) => !p.hidden);
+}

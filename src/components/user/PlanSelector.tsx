@@ -3,7 +3,7 @@
 import { Fragment, useState, type ReactNode } from "react"
 import { motion } from "framer-motion"
 import { CheckCircle2, CheckIcon, SparklesIcon } from "lucide-react"
-import { PLAN_CATALOG, type PlanId, type PlanDefinition } from "@fitconnect/shared/types/subscription"
+import { PLAN_CATALOG, purchasablePlans, type PlanId, type PlanDefinition } from "@fitconnect/shared/types/subscription"
 import { cn } from "@/lib/utils"
 import { applyGstToRupees, formatPaise, GST_RATE_PERCENT } from '@fitconnect/shared/utils/gst';
 
@@ -12,6 +12,8 @@ interface PlanSelectorProps {
     onSelect: (planId: PlanId) => void
     priceOverrides?: Partial<Record<string, number>>
     selectedPlanAction?: ReactNode
+    /** Effective catalog from the pricing API (defaults + admin edits). Falls back to the static catalog. */
+    plans?: PlanDefinition[]
 }
 
 function PlanCard({
@@ -92,11 +94,12 @@ function PlanCard({
     )
 }
 
-export function PlanSelector({ selectedPlanId, onSelect, priceOverrides, selectedPlanAction }: PlanSelectorProps) {
+export function PlanSelector({ selectedPlanId, onSelect, priceOverrides, selectedPlanAction, plans: catalog }: PlanSelectorProps) {
     const [activeTab, setActiveTab] = useState<'membership' | 'class_pack'>('membership')
 
-    const memberships = PLAN_CATALOG.filter(p => p.category === 'membership')
-    const classPacks = PLAN_CATALOG.filter(p => p.category === 'class_pack')
+    const visible = purchasablePlans(catalog ?? PLAN_CATALOG)
+    const memberships = visible.filter(p => p.category === 'membership')
+    const classPacks = visible.filter(p => p.category === 'class_pack')
     const plans = activeTab === 'membership' ? memberships : classPacks
 
     return (

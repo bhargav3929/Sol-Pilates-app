@@ -22,6 +22,7 @@ import {
     CheckSquare,
     Megaphone,
     Tray,
+    Tag,
 } from "@phosphor-icons/react"
 import { useState } from "react"
 import { useAdminAuthStore } from "@fitconnect/shared/stores/adminAuthStore"
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
     { label: "Bookings", icon: BookmarkSimple, href: "/admin/bookings" },
     { label: "Classes", icon: CalendarDots, href: "/admin/classes" },
     { label: "Members", icon: UserCircle, href: "/admin/members" },
+    { label: "Plans & Pricing", icon: Tag, href: "/admin/plans" },
     { label: "Leads", icon: EnvelopeSimple, href: "/admin/leads" },
     { label: "Messages", icon: Tray, href: "/admin/messages" },
     { label: "Waitlist", icon: Star, href: "/admin/waitlist" },

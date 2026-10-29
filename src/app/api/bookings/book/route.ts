@@ -3,7 +3,8 @@ import { sendTrainerBookingAlert } from '@/lib/email/trainer-booking-alert';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { recordSubscriptionEvent, subscriptionChanges } from '@/lib/subscription-events';
-import { getPlanById, LEGACY_PLAN_MAP } from '@fitconnect/shared/types/subscription';
+import { LEGACY_PLAN_MAP, findPlan, type PlanDefinition } from '@fitconnect/shared/types/subscription';
+import { getEffectiveCatalog } from '@/lib/plans/catalog';
 import { isIntroClassType } from '@fitconnect/shared/types/class';
 import { classEndAtStudio, classStartAtStudio } from '@fitconnect/shared/schedule/class-time';
 import { isFrozenAt } from '@fitconnect/shared/subscriptions/policy';
@@ -22,10 +23,10 @@ function getMondayWeekWindow(date: Date) {
     return { start, end };
 }
 
-function getPlanWeeklyLimit(planId: unknown): number | undefined {
+function getPlanWeeklyLimit(planId: unknown, catalog: PlanDefinition[]): number | undefined {
     if (typeof planId !== 'string') return undefined;
     const mappedPlanId = LEGACY_PLAN_MAP[planId] ?? planId;
-    return getPlanById(mappedPlanId)?.weeklyClassLimit;
+    return findPlan(catalog, mappedPlanId)?.weeklyClassLimit;
 }
 
 function getMappedPlanId(planId: unknown): string | undefined {
@@ -38,6 +39,8 @@ function getPositiveNumber(value: unknown): number | undefined {
 }
 
 export async function POST(req: NextRequest) {
+    // Admin-edited weekly limits must apply even to members whose subscription predates the edit.
+    const effectiveCatalog = await getEffectiveCatalog();
     try {
         // Verify auth
         const authHeader = req.headers.get('Authorization');
@@ -267,7 +270,7 @@ export async function POST(req: NextRequest) {
             }
 
             // ── Weekly booking limit (Monday-Sunday) ────────────────
-            const fallbackPlanLimit = getPlanWeeklyLimit(subscription.planId || subscription.planType);
+            const fallbackPlanLimit = getPlanWeeklyLimit(subscription.planId || subscription.planType, effectiveCatalog);
             const weeklyClassLimit = getPositiveNumber(subscription.weeklyClassLimit) ?? fallbackPlanLimit ?? 1;
             const classWeek = getMondayWeekWindow(classDate);
 
