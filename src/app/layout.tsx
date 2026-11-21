@@ -20,8 +20,20 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.solpilatesstudio.in"),
   title: "SOL Pilates Studio",
   description: "Premium Pilates class booking platform",
+  openGraph: {
+    title: "SOL Pilates Studio",
+    description: "Premium Pilates class booking platform",
+    siteName: "SOL Pilates Studio",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SOL Pilates Studio",
+    description: "Premium Pilates class booking platform",
+  },
 };
 
 export default function RootLayout({
